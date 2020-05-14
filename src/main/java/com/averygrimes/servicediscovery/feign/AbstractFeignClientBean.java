@@ -55,7 +55,7 @@ public abstract class AbstractFeignClientBean<T> implements FactoryBean<T>, Init
                 .contract(new JAXRSContract())
                 .retryer(new Retryer.Default())
                 .encoder(new DiscoveryFeignEncoder())
-                .decoder(new ResponseDecoder(serviceInterface))
+                .decoder(new ResponseDecoder<>(serviceInterface))
                 .errorDecoder(new DiscoveryErrorDecoder())
                 .client(this)
                 .target(serviceInterface, serviceURL);
@@ -68,7 +68,7 @@ public abstract class AbstractFeignClientBean<T> implements FactoryBean<T>, Init
 
 
     private void setupClient(){
-        javax.ws.rs.client.Client jerseyClient = ClientBuilder.newBuilder().newClient();
+        javax.ws.rs.client.Client jerseyClient = ClientBuilder.newClient();
         jerseyClient.property(ClientProperties.CONNECT_TIMEOUT, "");
         jerseyClient.property(ClientProperties.READ_TIMEOUT, "");
     }
