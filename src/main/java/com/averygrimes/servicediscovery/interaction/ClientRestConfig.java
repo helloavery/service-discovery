@@ -1,5 +1,7 @@
 package com.averygrimes.servicediscovery.interaction;
 
+import com.averygrimes.servicediscovery.SafeUtils;
+import com.averygrimes.servicediscovery.ServiceDiscoveryException;
 import com.averygrimes.servicediscovery.SimpleFeignClientBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,7 +20,7 @@ import javax.inject.Inject;
 public class ClientRestConfig {
 
     private Environment environment;
-    private static final String CONSUL_PROPERTY = "consul.environment";
+    private static final String DISCOVERY_ENVIRONMENT= "discovery.environment";
     private static final String QA_CONSUL_URI = "http://localhost:8500/v1";
     private static final String PROD_CONSUL_URI = "http://localhost:8500/v1";
 
@@ -35,13 +37,13 @@ public class ClientRestConfig {
     }
 
     private String getConsulURI(){
-        if(environment.getProperty(CONSUL_PROPERTY).equalsIgnoreCase("QA")){
+        if(SafeUtils.safe(environment.getProperty(DISCOVERY_ENVIRONMENT)).equalsIgnoreCase("QA")){
             return QA_CONSUL_URI;
         }
-        else if(environment.getProperty(CONSUL_PROPERTY).equalsIgnoreCase("PROD")){
+        else if(SafeUtils.safe(environment.getProperty(DISCOVERY_ENVIRONMENT)).equalsIgnoreCase("PROD")){
             return PROD_CONSUL_URI;
         }
-        return null;
+        throw new ServiceDiscoveryException("Missing required 'consul.environment' property.");
     }
 
 }

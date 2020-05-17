@@ -12,10 +12,10 @@ import javax.ws.rs.WebApplicationException;
  * https://github.com/helloavery
  */
 
-public class DiscoveryErrorDecoder extends ErrorDecoder.Default {
+public class DiscoveryErrorDecoder<T> extends ErrorDecoder.Default {
 
     @Override
     public Exception decode(String methodKey, Response response) {
-        return new WebApplicationException(new FeignJaxrsResponse(response));
+        return new WebApplicationException(new FeignJaxrsResponse<T>(response));
     }
 }

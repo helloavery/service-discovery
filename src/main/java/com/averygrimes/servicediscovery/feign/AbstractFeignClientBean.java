@@ -56,7 +56,7 @@ public abstract class AbstractFeignClientBean<T> implements FactoryBean<T>, Init
                 .retryer(new Retryer.Default())
                 .encoder(new DiscoveryFeignEncoder())
                 .decoder(new ResponseDecoder<>(serviceInterface))
-                .errorDecoder(new DiscoveryErrorDecoder())
+                .errorDecoder(new DiscoveryErrorDecoder<>())
                 .client(this)
                 .target(serviceInterface, serviceURL);
     }
