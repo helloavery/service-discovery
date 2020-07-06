@@ -10,6 +10,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
@@ -22,10 +23,10 @@ import javax.ws.rs.core.Response;
 @Named
 public interface ConsulDiscoveryClient {
 
-    @Path("/health/service/{serviceId}?passing")
+    @Path("/health/service/{serviceId}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    Response retrieveService(@PathParam("serviceId") String serviceId);
+    Response retrieveService(@PathParam("serviceId") String serviceId, @QueryParam("status") String status, @QueryParam("filter") String filter);
 
     @Path("/agent/service/register")
     @PUT

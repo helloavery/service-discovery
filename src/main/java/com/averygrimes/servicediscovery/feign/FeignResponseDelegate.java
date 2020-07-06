@@ -26,8 +26,11 @@ public class FeignResponseDelegate extends Client.Default {
     public Response execute(Request request, Request.Options options) throws IOException {
         Response response = super.execute(request, options);
 
-        InputStream responseBodyInputStream = response.body().asInputStream();
-        byte[] bytes = IOUtils.toByteArray(responseBodyInputStream);
+        byte[] bytes = null;
+        if(response.body() != null){
+            InputStream responseBodyInputStream = response.body().asInputStream();
+            bytes = IOUtils.toByteArray(responseBodyInputStream);
+        }
         return response.toBuilder()
                 .body(bytes)
                 .build();

@@ -25,8 +25,7 @@ import java.io.IOException;
 public abstract class AbstractFeignClientBean<T> implements FactoryBean<T>, InitializingBean, Client {
 
     private T client;
-    private Class<T> serviceInterface;
-    private String serviceURL;
+    private final Class<T> serviceInterface;
 
     protected AbstractFeignClientBean(Class<T> serviceInterface) {
         this.serviceInterface = serviceInterface;
@@ -49,7 +48,7 @@ public abstract class AbstractFeignClientBean<T> implements FactoryBean<T>, Init
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        serviceURL = resolveServiceURL();
+        String serviceURL = resolveServiceURL();
         setupClient();
         this.client = Feign.builder().logger(new Slf4jLogger(serviceURL)).logLevel(Logger.Level.BASIC)
                 .contract(new JAXRSContract())

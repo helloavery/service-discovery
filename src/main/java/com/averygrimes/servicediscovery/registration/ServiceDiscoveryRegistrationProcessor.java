@@ -51,19 +51,27 @@ public class ServiceDiscoveryRegistrationProcessor extends ServiceDiscoveryListe
                     ConsulServiceInfo consulServiceInfo = new ConsulServiceInfo();
                     consulServiceInfo.setName(service.service());
                     consulServiceInfo.setAddress(baseURI);
+                    consulServiceInfo.setPort(port);
+
                     Map<String, String> meta = new HashMap<>();
                     String version = VersioningUtils.deriveVersion(service.version());
                     meta.put("version", version);
                     meta.put("applicationPath", applicationURI);
                     consulServiceInfo.setMeta(meta);
-                    consulServiceInfo.setPort(port);
+
                     ConsulServiceCheck consulServiceCheck = new ConsulServiceCheck();
                     consulServiceCheck.setName(service.service() + "-healthCheck");
-                    consulServiceCheck.setHTTP(applicationURI + service.healthCheckPath());
+                    StringBuilder healthCheckPath = new StringBuilder(baseURI);
+                    if(port != null){
+                        healthCheckPath.append(":").append(port);
+                    }
+                    healthCheckPath.append(service.healthCheckPath());
+                    consulServiceCheck.setHTTP(healthCheckPath.toString());
                     consulServiceCheck.setInterval("10s");
                     consulServiceCheck.setServiceID(service.service());
                     consulServiceCheck.setTls_skip_verify(true);
                     consulServiceInfo.setCheck(consulServiceCheck);
+
                     return consulServiceInfo;
                 }).forEach(this::publishService);
     }

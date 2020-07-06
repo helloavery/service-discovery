@@ -6,13 +6,14 @@ import com.averygrimes.servicediscovery.feign.AbstractFeignClientBean;
 import com.averygrimes.servicediscovery.interaction.ConsulDiscoveryClient;
 import com.netflix.client.config.IClientConfig;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.Response;
 import java.util.List;
-import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -21,19 +22,19 @@ import java.util.stream.Collectors;
  * https://github.com/helloavery
  */
 
-public class RestFeignClientBean<T> extends AbstractFeignClientBean {
+public class RestFeignClientBean<T> extends AbstractFeignClientBean<T> {
 
     private ConsulDiscoveryClient consulDiscoveryClient;
 
-    private String service;
-    private String version;
-    private String instance;
+    private final String service;
+    private final String version;
 
-    public RestFeignClientBean(Class<T> serviceInterface, String service, String version, String instance) {
+    private final AtomicInteger position = new AtomicInteger(0);
+
+    public RestFeignClientBean(Class<T> serviceInterface, String service, String version) {
         super(serviceInterface);
         this.service = service;
         this.version = version;
-        this.instance = instance;
     }
 
     @Inject
@@ -48,17 +49,29 @@ public class RestFeignClientBean<T> extends AbstractFeignClientBean {
 
     @Override
     protected String resolveServiceURL() {
-        Response consulServiceResponse = consulDiscoveryClient.retrieveService(service);
+        String serviceURL = null;
+        String derivedVersion = VersioningUtils.deriveVersion(version);
+        Response consulServiceResponse = consulDiscoveryClient.retrieveService(service, "passing", "Service.Meta.version=="+derivedVersion);
         validateResponse(consulServiceResponse);
         List<ConsulServiceResponse> serviceInfoList  = consulServiceResponse.readEntity(new GenericType<List<ConsulServiceResponse>>(){});
 
         List<ConsulServiceInfo> filteredServiceInfoList = serviceInfoList.stream().filter(res -> res.getService().getMeta().get("version").equals(VersioningUtils.deriveVersion(version)))
                 .map(ConsulServiceResponse::getService).collect(Collectors.toList());
 
-        //Get random element. Consul internally load balances but we want to randomly retrieve an item just in case more than one is returned
-        Random rand = new Random();
-        ConsulServiceInfo filteredServiceInfo = filteredServiceInfoList.get(rand.nextInt(filteredServiceInfoList.size()));
-        return filteredServiceInfo.getMeta().get("applicationPath");
+        // Round Robin algorithm to load balance hosts. We are returned multiple passing hosts from Consul
+        if (position.get() > filteredServiceInfoList.size() - 1) {
+            position.set(0);
+        }
+        ConsulServiceInfo filteredServiceInfo = filteredServiceInfoList.get(position.get());
+        if(StringUtils.isNotBlank(filteredServiceInfo.getMeta().get("applicationPath"))){
+            serviceURL = filteredServiceInfo.getMeta().get("applicationPath");
+        }
+        position.getAndIncrement();
+
+        if(serviceURL == null){
+            throw new WebApplicationException("Load balancer provided no available servers for " + service + "-" + version);
+        }
+        return serviceURL;
     }
 
     private void validateResponse(Response response){

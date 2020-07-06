@@ -1,8 +1,8 @@
 # Service Discovery
 
-Load balancer and feign client that leverages Consul.
+Feign client that leverages Consul.
 Eliminates the need to have logic for HTTP clients to make API calls to external services while providing
-a load balancing solution
+a partial load balancing solution by only providing healthy services
 
 # How it works
 Registering services/endpoints:
@@ -16,6 +16,5 @@ Client discovery:
 * Consul will check hosts status and only return healthy endpoints
 
 Load Balancing:
-* Handled by Consul via http health check
-* Only returns services that are healthy
-
+* Call made to Consul to only get healthy (passing) hosts based on service and version
+* Round Robin method used to load balance

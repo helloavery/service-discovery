@@ -43,7 +43,7 @@ public class ClientRestConfig {
         else if(SafeUtils.safe(environment.getProperty(DISCOVERY_ENVIRONMENT)).equalsIgnoreCase("PROD")){
             return PROD_CONSUL_URI;
         }
-        throw new ServiceDiscoveryException("Missing required 'consul.environment' property.");
+        throw new ServiceDiscoveryException("Missing required 'discovery.environment' property.");
     }
 
 }

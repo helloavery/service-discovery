@@ -10,7 +10,7 @@ import com.netflix.client.config.IClientConfig;
  * https://github.com/helloavery
  */
 
-public class SimpleFeignClientBean<T> extends AbstractFeignClientBean {
+public class SimpleFeignClientBean<T> extends AbstractFeignClientBean<T> {
 
     private String URL;
 

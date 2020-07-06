@@ -33,7 +33,7 @@ public class ResponseDecoder<T> extends JacksonDecoder {
     @Override
     public Object decode(Response response, Type type) throws IOException {
         if(javax.ws.rs.core.Response.class.equals(type)){
-            return new FeignJaxrsResponse<>(response, serviceInterface);
+            return new FeignJaxrsResponse(response, serviceInterface);
         }
         else if(String.class.equals(type)){
             return decodeAsString(response, type);

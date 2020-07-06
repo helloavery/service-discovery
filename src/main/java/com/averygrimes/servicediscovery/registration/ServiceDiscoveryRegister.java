@@ -1,5 +1,6 @@
 package com.averygrimes.servicediscovery.registration;
 
+import com.averygrimes.servicediscovery.EnableServiceDiscovery;
 import org.springframework.stereotype.Component;
 
 import java.lang.annotation.ElementType;
@@ -15,6 +16,7 @@ import java.lang.annotation.Target;
 
 @Component
 @Retention(RetentionPolicy.RUNTIME) @Target(ElementType.TYPE)
+@EnableServiceDiscovery
 public @interface ServiceDiscoveryRegister {
 
     String service();

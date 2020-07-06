@@ -56,7 +56,7 @@ import java.util.function.Function;
  * https://github.com/helloavery
  */
 
-public class FeignJaxrsResponse<T> extends Response {
+public class FeignJaxrsResponse extends Response {
 
     private MultivaluedMap<String, String> headers = new MultivaluedHashMap<>();
     private ObjectMapper objectMapper;
@@ -69,7 +69,7 @@ public class FeignJaxrsResponse<T> extends Response {
         this(feignResponse, null);
     }
 
-    public FeignJaxrsResponse(final feign.Response feignResponse, Class<T> serviceInterface) {
+    public <T> FeignJaxrsResponse(final feign.Response feignResponse, Class<T> serviceInterface) {
         objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         gsonMapper = initGson();
         statusType = Statuses.from(feignResponse.status());

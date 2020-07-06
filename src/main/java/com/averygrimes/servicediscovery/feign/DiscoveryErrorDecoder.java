@@ -16,6 +16,6 @@ public class DiscoveryErrorDecoder<T> extends ErrorDecoder.Default {
 
     @Override
     public Exception decode(String methodKey, Response response) {
-        return new WebApplicationException(new FeignJaxrsResponse<T>(response));
+        return new WebApplicationException(new FeignJaxrsResponse(response));
     }
 }
