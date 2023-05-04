@@ -7,12 +7,20 @@ import feign.Logger;
 import feign.Request;
 import feign.Response;
 import feign.Retryer;
+import feign.codec.ErrorDecoder;
+import feign.form.spring.SpringFormEncoder;
 import feign.jaxrs.JAXRSContract;
 import feign.slf4j.Slf4jLogger;
 import org.glassfish.jersey.client.ClientProperties;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.ObjectFactory;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.http.HttpMessageConverters;
+import org.springframework.cloud.openfeign.support.*;
 
+import javax.inject.Inject;
 import javax.ws.rs.client.ClientBuilder;
 import java.io.IOException;
 
@@ -29,6 +37,20 @@ public abstract class AbstractFeignClientBean<T> implements FactoryBean<T>, Init
 
     protected AbstractFeignClientBean(Class<T> serviceInterface) {
         this.serviceInterface = serviceInterface;
+    }
+
+    private ObjectFactory<HttpMessageConverters> messageConverters;
+
+    private ObjectProvider<HttpMessageConverterCustomizer> customizers;
+
+    @Inject
+    public void setMessageConverters(ObjectFactory<HttpMessageConverters> messageConverters) {
+        this.messageConverters = messageConverters;
+    }
+
+    @Inject
+    public void setCustomizers(ObjectProvider<HttpMessageConverterCustomizer> customizers) {
+        this.customizers = customizers;
     }
 
     @Override
@@ -49,12 +71,12 @@ public abstract class AbstractFeignClientBean<T> implements FactoryBean<T>, Init
     @Override
     public void afterPropertiesSet() throws Exception {
         String serviceURL = resolveServiceURL();
-        setupClient();
-        this.client = Feign.builder().logger(new Slf4jLogger(serviceURL)).logLevel(Logger.Level.BASIC)
-                .contract(new JAXRSContract())
+        this.client = Feign.builder()
+                .logger(new Slf4jLogger(serviceURL)).logLevel(Logger.Level.BASIC)
+                .contract(new SpringMvcContract())
                 .retryer(new Retryer.Default())
-                .encoder(new DiscoveryFeignEncoder())
-                .decoder(new ResponseDecoder<>(serviceInterface))
+                .encoder(new SpringFormEncoder())
+                .decoder(new ResponseEntityDecoder(new SpringDecoder(messageConverters, customizers)))
                 .errorDecoder(new DiscoveryErrorDecoder<>())
                 .client(this)
                 .target(serviceInterface, serviceURL);
@@ -63,13 +85,6 @@ public abstract class AbstractFeignClientBean<T> implements FactoryBean<T>, Init
     @Override
     public Response execute(Request request, Request.Options options) throws IOException {
         return new FeignResponseDelegate(null, null).execute(request, options);
-    }
-
-
-    private void setupClient(){
-        javax.ws.rs.client.Client jerseyClient = ClientBuilder.newClient();
-        jerseyClient.property(ClientProperties.CONNECT_TIMEOUT, "");
-        jerseyClient.property(ClientProperties.READ_TIMEOUT, "");
     }
 
     protected abstract void customizeConfiguration(IClientConfig clientConfig);

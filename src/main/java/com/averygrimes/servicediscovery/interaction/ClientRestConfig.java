@@ -1,7 +1,8 @@
 package com.averygrimes.servicediscovery.interaction;
 
-import com.averygrimes.servicediscovery.SafeUtils;
-import com.averygrimes.servicediscovery.ServiceDiscoveryException;
+import com.averygrimes.servicediscovery.ConsulDiscoveryClientApi;
+import com.averygrimes.servicediscovery.utils.SafeUtils;
+import com.averygrimes.servicediscovery.exception.ServiceDiscoveryException;
 import com.averygrimes.servicediscovery.SimpleFeignClientBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,6 +22,7 @@ public class ClientRestConfig {
 
     private Environment environment;
     private static final String DISCOVERY_ENVIRONMENT= "discovery.environment";
+    private static final String DEV_CONSUL_URI = "http://localhost:8500/v1";
     private static final String QA_CONSUL_URI = "http://localhost:8500/v1";
     private static final String PROD_CONSUL_URI = "http://localhost:8500/v1";
 
@@ -30,14 +32,17 @@ public class ClientRestConfig {
     }
 
     @Bean
-    public SimpleFeignClientBean<ConsulDiscoveryClient> createConsulClient(){
+    public SimpleFeignClientBean<ConsulDiscoveryClientApi> createConsulClient(){
         String consulURI = getConsulURI();
         Assert.notNull(consulURI, "Could not establish Consul URI, Consul URI came back null");
-        return new SimpleFeignClientBean<>(ConsulDiscoveryClient.class, consulURI);
+        return new SimpleFeignClientBean<>(ConsulDiscoveryClientApi.class, consulURI);
     }
 
     private String getConsulURI(){
-        if(SafeUtils.safe(environment.getProperty(DISCOVERY_ENVIRONMENT)).equalsIgnoreCase("QA")){
+        if(SafeUtils.safe(environment.getProperty(DISCOVERY_ENVIRONMENT)).equalsIgnoreCase("DEV")){
+            return DEV_CONSUL_URI;
+        }
+        else if(SafeUtils.safe(environment.getProperty(DISCOVERY_ENVIRONMENT)).equalsIgnoreCase("QA")){
             return QA_CONSUL_URI;
         }
         else if(SafeUtils.safe(environment.getProperty(DISCOVERY_ENVIRONMENT)).equalsIgnoreCase("PROD")){

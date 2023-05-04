@@ -1,10 +1,9 @@
 package com.averygrimes.servicediscovery.feign;
 
-import com.averygrimes.servicediscovery.jersey.FeignJaxrsResponse;
+import com.averygrimes.servicediscovery.exception.ServiceDiscoveryException;
 import feign.Response;
 import feign.codec.ErrorDecoder;
 
-import javax.ws.rs.WebApplicationException;
 
 /**
  * @author Avery Grimes-Farrow
@@ -16,6 +15,6 @@ public class DiscoveryErrorDecoder<T> extends ErrorDecoder.Default {
 
     @Override
     public Exception decode(String methodKey, Response response) {
-        return new WebApplicationException(new FeignJaxrsResponse(response));
+        return new ServiceDiscoveryException(response.reason());
     }
 }

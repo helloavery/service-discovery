@@ -1,7 +1,7 @@
 package com.averygrimes.servicediscovery.registration;
 
-import com.averygrimes.servicediscovery.SafeUtils;
-import com.averygrimes.servicediscovery.ServiceDiscoveryException;
+import com.averygrimes.servicediscovery.utils.SafeUtils;
+import com.averygrimes.servicediscovery.exception.ServiceDiscoveryException;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
@@ -24,6 +24,7 @@ public class ServiceDiscoveryPublisher {
     private ApplicationEventPublisher applicationEventPublisher;
 
     private static final String DISCOVERY_ENVIRONMENT_PROPERTY = "discovery.environment";
+    private static final String DEV_HOST_PROPERTY = "dev.hosts";
     private static final String QA_HOST_PROPERTY = "qa.hosts";
     private static final String PROD_HOST_PROPERTY = "prod.hosts";
 
@@ -44,7 +45,10 @@ public class ServiceDiscoveryPublisher {
 
     @SuppressWarnings("unchecked")
     private List<String> getServiceHost(){
-        if(SafeUtils.safe(environment.getProperty(DISCOVERY_ENVIRONMENT_PROPERTY)).equalsIgnoreCase("QA")){
+        if(SafeUtils.safe(environment.getProperty(DISCOVERY_ENVIRONMENT_PROPERTY)).equalsIgnoreCase("DEV")){
+            return environment.getProperty(DEV_HOST_PROPERTY, List.class);
+        }
+        else if(SafeUtils.safe(environment.getProperty(DISCOVERY_ENVIRONMENT_PROPERTY)).equalsIgnoreCase("QA")){
             return environment.getProperty(QA_HOST_PROPERTY, List.class);
         }
         else if(SafeUtils.safe(environment.getProperty(DISCOVERY_ENVIRONMENT_PROPERTY)).equalsIgnoreCase("PROD")){

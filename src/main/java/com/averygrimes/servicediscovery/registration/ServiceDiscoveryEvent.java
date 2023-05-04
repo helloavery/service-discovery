@@ -10,7 +10,7 @@ import org.springframework.context.ApplicationEvent;
 
 public class ServiceDiscoveryEvent extends ApplicationEvent {
 
-    private String serviceURI;
+    private final String serviceURI;
 
     public ServiceDiscoveryEvent(Object source, String serviceURI) {
         super(source);

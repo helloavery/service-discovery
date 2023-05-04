@@ -1,4 +1,4 @@
-package com.averygrimes.servicediscovery;
+package com.averygrimes.servicediscovery.config;
 
 import com.averygrimes.servicediscovery.registration.ServiceDiscoveryRegistrationProcessor;
 import org.springframework.context.annotation.Bean;
@@ -16,7 +16,7 @@ import javax.ws.rs.core.Application;
 public class ServiceDiscoveryConfig {
 
     @Bean
-    public ServiceDiscoveryRegistrationProcessor discoveryRegistrationProcessor(Application application) {
-        return new ServiceDiscoveryRegistrationProcessor(application);
+    public ServiceDiscoveryRegistrationProcessor discoveryRegistrationProcessor() {
+        return new ServiceDiscoveryRegistrationProcessor();
     }
 }

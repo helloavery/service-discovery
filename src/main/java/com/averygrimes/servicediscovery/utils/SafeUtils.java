@@ -1,4 +1,4 @@
-package com.averygrimes.servicediscovery;
+package com.averygrimes.servicediscovery.utils;
 
 import java.util.ArrayList;
 import java.util.HashSet;

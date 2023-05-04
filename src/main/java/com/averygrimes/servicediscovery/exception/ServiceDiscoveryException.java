@@ -1,4 +1,4 @@
-package com.averygrimes.servicediscovery;
+package com.averygrimes.servicediscovery.exception;
 
 /**
  * @author Avery Grimes-Farrow

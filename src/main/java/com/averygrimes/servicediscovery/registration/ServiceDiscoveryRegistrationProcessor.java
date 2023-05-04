@@ -1,19 +1,16 @@
 package com.averygrimes.servicediscovery.registration;
 
-import com.averygrimes.servicediscovery.VersioningUtils;
-import com.averygrimes.servicediscovery.consul.ConsulServiceCheck;
-import com.averygrimes.servicediscovery.consul.ConsulServiceInfo;
-import com.averygrimes.servicediscovery.interaction.ConsulDiscoveryClient;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.BeanFactoryAware;
-import org.springframework.beans.factory.ListableBeanFactory;
-import org.springframework.core.annotation.AnnotationUtils;
+import com.averygrimes.servicediscovery.ConsulDiscoveryClientApi;
+import com.averygrimes.servicediscovery.utils.VersioningUtils;
+import com.averygrimes.servicediscovery.model.ConsulServiceCheck;
+import com.averygrimes.servicediscovery.model.ConsulServiceInfo;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
-import javax.ws.rs.core.Application;
-import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,66 +20,70 @@ import java.util.Map;
  * https://github.com/helloavery
  */
 
-public class ServiceDiscoveryRegistrationProcessor extends ServiceDiscoveryListener implements BeanFactoryAware {
+@Slf4j
+@Component
+public class ServiceDiscoveryRegistrationProcessor extends ServiceDiscoveryListener{
 
-    private static final Logger LOGGER = LogManager.getLogger(ServiceDiscoveryRegistrationProcessor.class);
-    private ListableBeanFactory beanFactory;
-    private ConsulDiscoveryClient consulDiscoveryClient;
+    private Environment environment;
+    private ConsulDiscoveryClientApi consulDiscoveryClient;
 
-    public ServiceDiscoveryRegistrationProcessor(Application application) {
-        super(application);
+    @Autowired
+    public void setEnvironment(Environment environment){
+        this.environment = environment;
     }
 
-    @Inject
-    public void setConsulDiscoveryClient(ConsulDiscoveryClient consulDiscoveryClient) {
+    @Autowired
+    public void setConsulDiscoveryClient(ConsulDiscoveryClientApi consulDiscoveryClient) {
         this.consulDiscoveryClient = consulDiscoveryClient;
     }
 
     @Override
-    public void setBeanFactory(BeanFactory beanFactory) {
-        this.beanFactory = (ListableBeanFactory) beanFactory;
-    }
-
-    @Override
     protected void onServiceDetailsPrepared(String baseURI, Integer port, String applicationURI){
-        beanFactory.getBeansWithAnnotation(ServiceDiscoveryRegister.class).values().stream()
-                .map(bean -> AnnotationUtils.findAnnotation(bean.getClass(), ServiceDiscoveryRegister.class))
-                .map(service -> {
-                    ConsulServiceInfo consulServiceInfo = new ConsulServiceInfo();
-                    consulServiceInfo.setName(service.service());
-                    consulServiceInfo.setAddress(baseURI);
-                    consulServiceInfo.setPort(port);
+        if(StringUtils.isAnyBlank(environment.getProperty("servicediscovery.register.service"),
+                environment.getProperty("servicediscovery.register.version"),
+                environment.getProperty("servicediscovery.register.healthcheck"))){
+            log.info("Skipping Service Discovery Registry, missing one or more required Service Discovery properties");
+        }else{
+            String serviceName = environment.getProperty("servicediscovery.register.service");
+            String version = VersioningUtils.deriveVersion(environment.getProperty("servicediscovery.register.version"));
+            String healthCheckPath = environment.getProperty("servicediscovery.register.healthcheck");
 
-                    Map<String, String> meta = new HashMap<>();
-                    String version = VersioningUtils.deriveVersion(service.version());
-                    meta.put("version", version);
-                    meta.put("applicationPath", applicationURI);
-                    consulServiceInfo.setMeta(meta);
+            ConsulServiceInfo consulServiceInfo = new ConsulServiceInfo();
+            consulServiceInfo.setName(serviceName);
+            consulServiceInfo.setAddress(baseURI);
+            consulServiceInfo.setPort(port);
 
-                    ConsulServiceCheck consulServiceCheck = new ConsulServiceCheck();
-                    consulServiceCheck.setName(service.service() + "-healthCheck");
-                    StringBuilder healthCheckPath = new StringBuilder(baseURI);
-                    if(port != null){
-                        healthCheckPath.append(":").append(port);
-                    }
-                    healthCheckPath.append(service.healthCheckPath());
-                    consulServiceCheck.setHTTP(healthCheckPath.toString());
-                    consulServiceCheck.setInterval("10s");
-                    consulServiceCheck.setServiceID(service.service());
-                    consulServiceCheck.setTls_skip_verify(true);
-                    consulServiceInfo.setCheck(consulServiceCheck);
+            Map<String, String> meta = new HashMap<>();
+            meta.put("version", version);
+            meta.put("applicationPath", applicationURI);
+            consulServiceInfo.setMeta(meta);
 
-                    return consulServiceInfo;
-                }).forEach(this::publishService);
+            ConsulServiceCheck consulServiceCheck = new ConsulServiceCheck();
+            consulServiceCheck.setName(serviceName + "-healthCheck");
+
+            StringBuilder healthCheckPathStringBuilder = new StringBuilder(baseURI);
+            if(port != null){
+                healthCheckPathStringBuilder.append(":").append(port);
+            }
+            healthCheckPathStringBuilder.append(healthCheckPath);
+            consulServiceCheck.setHTTP(healthCheckPathStringBuilder.toString());
+
+            consulServiceCheck.setInterval("10s");
+            consulServiceCheck.setServiceID(serviceName);
+            consulServiceCheck.setTlsSkipVerify(true);
+            consulServiceInfo.setCheck(consulServiceCheck);
+            publishService(consulServiceInfo);
+
+        }
     }
 
     private void publishService(ConsulServiceInfo consulServiceInfo){
-        Response consulResponse  = consulDiscoveryClient.publishService(consulServiceInfo);
-        if(consulResponse.getStatus() > 299){
-            LOGGER.error("Error registering service {}, error is {}", consulServiceInfo.getName(), consulResponse);
+        ResponseEntity<Void> consulResponse  = consulDiscoveryClient.publishService(consulServiceInfo);
+        if(consulResponse.getStatusCodeValue() > 299){
+            log.error("Error registering service {}, error is {}", consulServiceInfo.getName(), consulResponse);
         }
         else{
-            LOGGER.info("Consul registration of service {} successful", consulServiceInfo.getName());
+            log.info("Consul registration of service {} successful", consulServiceInfo.getName());
         }
     }
 }

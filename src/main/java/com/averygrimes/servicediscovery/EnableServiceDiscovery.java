@@ -1,5 +1,6 @@
 package com.averygrimes.servicediscovery;
 
+import com.averygrimes.servicediscovery.config.ServiceDiscoveryConfig;
 import com.averygrimes.servicediscovery.interaction.ClientRestConfig;
 import com.averygrimes.servicediscovery.registration.ServiceDiscoveryPublisher;
 import org.springframework.context.annotation.Import;

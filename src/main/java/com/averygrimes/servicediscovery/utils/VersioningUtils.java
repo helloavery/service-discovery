@@ -1,4 +1,4 @@
-package com.averygrimes.servicediscovery;
+package com.averygrimes.servicediscovery.utils;
 
 import org.apache.commons.lang3.math.NumberUtils;
 

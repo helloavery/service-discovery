@@ -1,0 +1,124 @@
+openapi: 3.0.1
+info:
+  title: Servie Discovery Interface
+  description: Servie Discovery APIs
+  version: 1.0.0
+
+paths:
+  /health/service/{serviceId}:
+    get:
+      tags:
+        - ConsulDiscoveryClient
+      summary: Retrieve registered service
+      operationId: retrieveService
+      parameters:
+        - name: serviceId
+          in: path
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: filter
+          schema:
+            type: string
+      responses: # API response
+        '200': #Successful status code
+          description: successful operation #Successful status description
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsulServiceArrayResponse'
+
+        '400': #Unsuccessful response code
+          description: Invalid Employee ID supplied #Unsuccessful response description
+        '404': #Unsuccessful response code
+          description: Employee not found #Unsuccessful response description
+  /agent/service/register:
+    put:
+      tags:
+        - ConsulDiscoveryClient
+      summary: Publish service to Consul
+      operationId: publishService
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsulServiceInfo'
+      responses: # API response
+        '200': #Successful status code
+          description: successful operation #Successful status description
+        '400': #Unsuccessful response code
+          description: Invalid Employee ID supplied #Unsuccessful response description
+        '404': #Unsuccessful response code
+          description: Employee not found #Unsuccessful response description
+  /agent/check/register:
+    put:
+      tags:
+        - ConsulDiscoveryClient
+      summary: Register service to Consul check
+      operationId: registerCheck
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsulServiceCheck'
+      responses: # API response
+        '200': #Successful status code
+          description: successful operation #Successful status description
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConsulServiceResponse'
+        '400': #Unsuccessful response code
+          description: Invalid Employee ID supplied #Unsuccessful response description
+        '404': #Unsuccessful response code
+          description: Employee not found #Unsuccessful response description
+
+components:
+  schemas:
+    ConsulServiceCheck:
+      type: object
+      properties:
+        Name:
+          type: string
+        HTTP:
+          type: string
+        Interval:
+          type: string
+        ServiceID:
+          type: string
+        tls_skip_verify:
+          type: boolean
+    ConsulServiceInfo:
+      type: object
+      properties:
+        ID:
+          type: string
+        Service:
+          type: string
+        Name:
+          type: string
+        Address:
+          type: string
+        Meta:
+          type: object
+          additionalProperties:
+            type: string
+        Port:
+          type: integer
+        Check:
+          $ref: '#/components/schemas/ConsulServiceCheck'
+    ConsulServiceResponse:
+      type: object
+      properties:
+        Service:
+          $ref: '#/components/schemas/ConsulServiceInfo'
+    ConsulServiceArrayResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/ConsulServiceResponse'
